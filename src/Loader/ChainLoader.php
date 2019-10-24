@@ -23,6 +23,7 @@ final class ChainLoader implements LoaderInterface
 {
     private $hasSourceCache = [];
     private $loaders = [];
+    private $cacheKeyCache = [];
 
     /**
      * @param LoaderInterface[] $loaders
@@ -38,6 +39,7 @@ final class ChainLoader implements LoaderInterface
     {
         $this->loaders[] = $loader;
         $this->hasSourceCache = [];
+        $this->cacheKeyCache = [];
     }
 
     /**
@@ -84,13 +86,16 @@ final class ChainLoader implements LoaderInterface
     public function getCacheKey(string $name): string
     {
         $exceptions = [];
+        if (isset($this->cacheKeyCache[$name])) {
+            return $this->cacheKeyCache[$name];
+        }
         foreach ($this->loaders as $loader) {
             if (!$loader->exists($name)) {
                 continue;
             }
 
             try {
-                return $loader->getCacheKey($name);
+                return $this->cacheKeyCache[$name] = $loader->getCacheKey($name);
             } catch (LoaderError $e) {
                 $exceptions[] = \get_class($loader).': '.$e->getMessage();
             }
